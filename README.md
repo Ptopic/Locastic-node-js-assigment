@@ -1,3 +1,3 @@
-## Locastic assigment
+# Locastic assigment
 
-# API for blog post creationg with user authentication
+### API for blog post creation with user authentication
