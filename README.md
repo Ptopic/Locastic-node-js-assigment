@@ -65,8 +65,10 @@ MYSQL_PASSWORD=
 MYSQL_DATABASE=
 <br>
 
-You can use mi burner email configuration for testing
+Gmail email and password needs to be setup for nodemailer usage it cant be just your regular password because its unsafe
+
+Use this <a href="https://miracleio.me/snippets/use-gmail-with-nodemailer/">link </a> to learn how
+
+GMAIL_EMAIL=
 <br>
-GMAIL_EMAIL=spotifyacc2223@gmail.com
-<br>
-GMAIL_PASSWORD=stklesiccfxmpqjr
+GMAIL_PASSWORD=
