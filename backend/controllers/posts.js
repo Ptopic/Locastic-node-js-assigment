@@ -6,7 +6,7 @@ const jwt = require('jsonwebtoken');
 const { sendResponse } = require('../utils/helper');
 
 exports.createPost = async (req, res) => {
-	const authHeader = req.headers.authorization;
+	const authHeader = req.headers.token;
 
 	if (authHeader) {
 		const token = authHeader;
@@ -45,7 +45,7 @@ exports.createPost = async (req, res) => {
 exports.accessPostRequests = async (req, res) => {
 	// Check if user has role admin
 
-	const authHeader = req.headers.authorization;
+	const authHeader = req.headers.token;
 
 	if (authHeader) {
 		const token = authHeader;
@@ -77,58 +77,71 @@ exports.accessPostRequests = async (req, res) => {
 exports.changePostStatus = async (req, res) => {
 	const { status, id } = req.body;
 
-	const authHeader = req.headers.authorization;
+	// Check any posts exist
 
-	if (authHeader) {
-		const token = authHeader;
+	const selectPosts = `SELECT * FROM posts WHERE id=${id}`;
 
-		jwt.verify(token, process.env.JWT_SECRET, async (err, user) => {
-			if (err) {
-				return sendResponse(400, 'Token is invalid', res);
-			}
+	db.query(selectPosts, (err, result) => {
+		if (err) {
+			return sendResponse(400, rezult, res);
+		}
+		if (result.length < 1) {
+			return sendResponse(400, 'No posts...', res);
+		}
 
-			if (user.role != 'ADMIN') {
-				return sendResponse(400, 'Admin role required for this action', res);
-			}
+		const authHeader = req.headers.token;
 
-			// If status of post is denied in req.body return post denied message
-			const postStatus = status.toLowerCase();
-			console.log(postStatus);
-			if (postStatus == 'denied') {
-				return sendResponse(200, 'Post denied by admin :(', res);
-			}
-			// Set post to allowed or denied based on req.body param
-			const changePostStatus = `UPDATE posts SET allowed = '${postStatus}' WHERE id = '${id}'`;
-			const getOwnerIdOfPost = `SELECT ownerId FROM posts WHERE id='${id}'`;
-			db.query(changePostStatus, (err, result) => {
+		if (authHeader) {
+			const token = authHeader;
+
+			jwt.verify(token, process.env.JWT_SECRET, async (err, user) => {
 				if (err) {
-					return sendResponse(400, err, res);
+					return sendResponse(400, 'Token is invalid', res);
 				}
-				// Get ownerId of sed post
-				db.query(getOwnerIdOfPost, (err, result) => {
+
+				if (user.role != 'ADMIN') {
+					return sendResponse(400, 'Admin role required for this action', res);
+				}
+
+				// If status of post is denied in req.body return post denied message
+				const postStatus = status.toLowerCase();
+				console.log(postStatus);
+				if (postStatus == 'denied') {
+					return sendResponse(200, 'Post denied by admin :(', res);
+				}
+				// Set post to allowed or denied based on req.body param
+				const changePostStatus = `UPDATE posts SET allowed = '${postStatus}' WHERE id = '${id}'`;
+				const getOwnerIdOfPost = `SELECT ownerId FROM posts WHERE id='${id}'`;
+				db.query(changePostStatus, (err, result) => {
 					if (err) {
 						return sendResponse(400, err, res);
 					}
-					const changeUserRole = `UPDATE users SET role = 'BLOGGER' WHERE uid = '${result[0].ownerId}'`;
-					// Change user role to blogger
-					db.query(changeUserRole, (err, result) => {
+					// Get ownerId of sed post
+					db.query(getOwnerIdOfPost, (err, result) => {
 						if (err) {
 							return sendResponse(400, err, res);
 						}
-						return res
-							.status(200)
-							.send({ success: true, msg: 'Post status changed by admin' });
+						const changeUserRole = `UPDATE users SET role = 'BLOGGER' WHERE uid = '${result[0].ownerId}'`;
+						// Change user role to blogger
+						db.query(changeUserRole, (err, result) => {
+							if (err) {
+								return sendResponse(400, err, res);
+							}
+							return res
+								.status(200)
+								.send({ success: true, msg: 'Post status changed by admin' });
+						});
 					});
 				});
 			});
-		});
-	} else {
-		return sendResponse(400, 'Please set token in header', res);
-	}
+		} else {
+			return sendResponse(400, 'Please set token in header', res);
+		}
+	});
 };
 
 exports.getPosts = async (req, res) => {
-	const authHeader = req.headers.authorization;
+	const authHeader = req.headers.token;
 
 	if (authHeader) {
 		const token = authHeader;
@@ -149,9 +162,7 @@ exports.getPosts = async (req, res) => {
 					}
 					return res.status(200).send({ success: true, data: result });
 				});
-			}
-
-			if (user.role == 'BLOGGER') {
+			} else if (user.role == 'BLOGGER') {
 				// If role is blogger get posts based on ownerId
 				const ownerId = user.uid;
 				const getUserPosts = `SELECT * FROM posts WHERE ownerId = '${ownerId}'`;
@@ -181,5 +192,60 @@ exports.getPosts = async (req, res) => {
 			}
 			return res.status(200).send({ success: true, data: result });
 		});
+	}
+};
+
+exports.deletePosts = async (req, res) => {
+	const authHeader = req.headers.token;
+
+	if (authHeader) {
+		const token = authHeader;
+
+		jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+			if (err) {
+				return sendResponse(400, 'Token is invalid', res);
+			}
+
+			const { id } = req.body;
+			// If role is admin get all posts
+			if (user.role == 'ADMIN') {
+				const getAllPost = `DELETE FROM posts WHERE id = ${id}`;
+				db.query(getAllPost, (err, result) => {
+					if (err) {
+						return sendResponse(400, err, res);
+					}
+					return res.status(200).send({
+						success: true,
+						msg: `Post with id ${id} deleted by admin`,
+					});
+				});
+			} else if (user.role == 'BLOGGER') {
+				// If role is blogger get posts based on ownerId
+				const ownerId = user.uid;
+				const getUserPosts = `SELECT * FROM posts WHERE ownerId = '${user.uid}' AND id = ${id}`;
+				db.query(getUserPosts, (err, result) => {
+					if (err) {
+						return sendResponse(400, err, res);
+					}
+					if (result.length < 1) {
+						return sendResponse(400, 'You dont have any posts to delete', res);
+					}
+
+					const deletePost = `DELETE FROM posts WHERE ownerId = '${user.uid}' AND id = ${id}`;
+
+					db.query(deletePost, (err, result) => {
+						if (err) {
+							return sendResponse(400, err, res);
+						}
+						console.log(result);
+						return res
+							.status(200)
+							.send({ success: true, msg: `Post with id ${id} deleted` });
+					});
+				});
+			}
+		});
+	} else {
+		return sendResponse(400, 'Please add token to header', res);
 	}
 };

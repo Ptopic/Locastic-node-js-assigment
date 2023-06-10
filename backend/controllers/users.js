@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const { sendResponse } = require('../utils/helper');
 
 exports.getAllUsers = async (req, res) => {
-	const authHeader = req.headers.authorization;
+	const authHeader = req.headers.token;
 
 	if (authHeader) {
 		const token = authHeader;

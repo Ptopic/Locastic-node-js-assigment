@@ -9,7 +9,7 @@ const {
 	generateEmailTemplate,
 } = require('../utils/mail');
 
-const sendResponse = require('../utils/helper');
+const { sendResponse } = require('../utils/helper');
 
 exports.checkEmail = async (req, res, next) => {
 	const { firstName, lastName, email, password } = req.body;
@@ -20,7 +20,7 @@ exports.checkEmail = async (req, res, next) => {
 			if (result.length < 1) {
 				next();
 			} else {
-				sendResponse(400, 'Email is already taken', res);
+				return sendResponse(400, 'Email is already taken', res);
 			}
 		}
 	});
@@ -35,7 +35,7 @@ exports.createUser = async (req, res, next) => {
 
 	db.query(sqlInsertUser, (err, result) => {
 		if (err) {
-			sendResponse(400, err, res);
+			return sendResponse(400, err, res);
 		}
 		res.locals.uid = uid;
 		res.locals.email = email;
@@ -65,7 +65,7 @@ exports.createAuthToken = async (req, res) => {
 	};
 	mailTransport().sendMail(mailOptions, function (err, info) {
 		if (err) {
-			sendResponse(400, err, res);
+			return sendResponse(400, err, res);
 		}
 	});
 
@@ -75,7 +75,7 @@ exports.createAuthToken = async (req, res) => {
 
 	db.query(sqlInsert, (err, result) => {
 		if (err) {
-			sendResponse(400, err.code, res);
+			return sendResponse(400, err.code, res);
 		}
 		return res.status(200).json({
 			success: true,
@@ -179,5 +179,52 @@ exports.verifyUser = async (req, res) => {
 				});
 			});
 		});
+	});
+};
+
+exports.adminAuthenticate = async (req, res) => {
+	const { uid } = req.body;
+
+	// Check any posts exist
+
+	const selectPosts = `SELECT * FROM users WHERE uid='${uid}'`;
+
+	db.query(selectPosts, (err, result) => {
+		if (err) {
+			return sendResponse(400, err, res);
+		}
+		if (result.length < 1) {
+			return sendResponse(400, 'No users with given id...', res);
+		}
+
+		const authHeader = req.headers.token;
+
+		if (authHeader) {
+			const token = authHeader;
+
+			jwt.verify(token, process.env.JWT_SECRET, async (err, user) => {
+				if (err) {
+					return sendResponse(400, 'Token is invalid', res);
+				}
+
+				if (user.role != 'ADMIN') {
+					return sendResponse(400, 'Admin role required for this action', res);
+				}
+
+				const authenticateUser = `UPDATE users SET isVerified = '1' WHERE uid = '${uid}'`;
+
+				db.query(authenticateUser, (err, result) => {
+					if (err) {
+						return sendResponse(400, err, res);
+					}
+
+					return res
+						.status(200)
+						.send({ success: true, msg: 'User authenticated by admin' });
+				});
+			});
+		} else {
+			return sendResponse(400, 'Please set token in header', res);
+		}
 	});
 };
