@@ -1,5 +1,9 @@
 const nodemailer = require('nodemailer');
 
+/*
+Generate 4 digit otp code to pass to nodemailer and send it to user
+Also is hashed using bcrypt in register controller to be stored in authTokens database
+*/
 const generateOtp = (res) => {
 	let otp = '';
 	for (let i = 0; i <= 3; i++) {
@@ -8,6 +12,10 @@ const generateOtp = (res) => {
 	}
 	return otp;
 };
+
+/*
+Node mailer options
+*/
 
 const mailTransport = () =>
 	nodemailer.createTransport({
@@ -19,6 +27,10 @@ const mailTransport = () =>
 			pass: process.env.GMAIL_PASSWORD,
 		},
 	});
+
+/*
+Email templates
+*/
 
 const generateEmailTemplate = (code) => {
 	return `

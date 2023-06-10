@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "express-jsdoc-swagger": "^1.8.0"
+  }
+}

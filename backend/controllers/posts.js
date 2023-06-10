@@ -5,6 +5,10 @@ const jwt = require('jsonwebtoken');
 
 const { sendResponse } = require('../utils/helper');
 
+/*
+Create post
+*/
+
 exports.createPost = async (req, res) => {
 	const authHeader = req.headers.token;
 
@@ -17,6 +21,10 @@ exports.createPost = async (req, res) => {
 			}
 
 			const { title, content } = req.body;
+
+			if (!title || !content) {
+				return sendResponse(400, 'Title or content of post is missing', res);
+			}
 
 			// Generate author name based on first and last name
 			const firstNameUpper =
@@ -41,6 +49,10 @@ exports.createPost = async (req, res) => {
 		return sendResponse(400, 'Please set token in header', res);
 	}
 };
+
+/*
+Access post requests
+*/
 
 exports.accessPostRequests = async (req, res) => {
 	// Check if user has role admin
@@ -74,10 +86,22 @@ exports.accessPostRequests = async (req, res) => {
 	}
 };
 
+/*
+Change status of post using id of post and wanted new status
+*/
+
 exports.changePostStatus = async (req, res) => {
 	const { status, id } = req.body;
 
 	// Check any posts exist
+
+	if (status.toLowerCase() != 'allowed' && status.toLowerCase() != 'denied') {
+		return sendResponse(
+			400,
+			'Status param is not valid only accepted options are allowed and denied',
+			res
+		);
+	}
 
 	const selectPosts = `SELECT * FROM posts WHERE id=${id}`;
 
@@ -105,7 +129,6 @@ exports.changePostStatus = async (req, res) => {
 
 				// If status of post is denied in req.body return post denied message
 				const postStatus = status.toLowerCase();
-				console.log(postStatus);
 				if (postStatus == 'denied') {
 					return sendResponse(200, 'Post denied by admin :(', res);
 				}
@@ -140,6 +163,10 @@ exports.changePostStatus = async (req, res) => {
 	});
 };
 
+/*
+Get posts
+*/
+
 exports.getPosts = async (req, res) => {
 	const authHeader = req.headers.token;
 
@@ -151,14 +178,15 @@ exports.getPosts = async (req, res) => {
 				return sendResponse(400, 'Token is invalid', res);
 			}
 
-			// Check role of user
-			console.log(user.role);
 			// If role is admin get all posts
 			if (user.role == 'ADMIN') {
 				const getAllPost = 'SELECT * FROM posts';
 				db.query(getAllPost, (err, result) => {
 					if (err) {
 						return sendResponse(400, err, res);
+					}
+					if (result.length < 1) {
+						return sendResponse(400, 'No posts to view', res);
 					}
 					return res.status(200).send({ success: true, data: result });
 				});
@@ -170,6 +198,9 @@ exports.getPosts = async (req, res) => {
 					if (err) {
 						return sendResponse(400, err, res);
 					}
+					if (result.length < 1) {
+						return sendResponse(400, 'No posts to view', res);
+					}
 					return res.status(200).send({ success: true, data: result });
 				});
 			} else {
@@ -178,6 +209,9 @@ exports.getPosts = async (req, res) => {
 				db.query(getPublicPosts, (err, result) => {
 					if (err) {
 						return sendResponse(400, err, res);
+					}
+					if (result.length < 1) {
+						return sendResponse(400, 'No posts to view', res);
 					}
 					return res.status(200).send({ success: true, data: result });
 				});
@@ -190,10 +224,17 @@ exports.getPosts = async (req, res) => {
 			if (err) {
 				return sendResponse(400, err, res);
 			}
+			if (result.length < 1) {
+				return sendResponse(400, 'No posts to view', res);
+			}
 			return res.status(200).send({ success: true, data: result });
 		});
 	}
 };
+
+/*
+Delete a post by given id
+*/
 
 exports.deletePosts = async (req, res) => {
 	const authHeader = req.headers.token;
@@ -237,12 +278,17 @@ exports.deletePosts = async (req, res) => {
 						if (err) {
 							return sendResponse(400, err, res);
 						}
-						console.log(result);
 						return res
 							.status(200)
 							.send({ success: true, msg: `Post with id ${id} deleted` });
 					});
 				});
+			} else {
+				return sendResponse(
+					400,
+					'Requires role BLOGGER or ADMIN to delete a post',
+					res
+				);
 			}
 		});
 	} else {

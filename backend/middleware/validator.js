@@ -1,5 +1,8 @@
 const { check, validationResult } = require('express-validator');
 
+/*
+Validate user data from req.body during registration process 
+*/
 exports.validateUser = [
 	check('firstName')
 		.trim()
@@ -24,6 +27,11 @@ exports.validateUser = [
 		.isLength({ min: 8, max: 20 })
 		.withMessage('Password must be 8 to 20 characters long'),
 ];
+
+/*
+Returns validation results
+If no errors proceed to next function
+*/
 
 exports.validateFunc = (req, res, next) => {
 	const error = validationResult(req).array();

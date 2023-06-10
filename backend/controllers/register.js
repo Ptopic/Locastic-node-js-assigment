@@ -50,10 +50,8 @@ exports.createAuthToken = async (req, res) => {
 	const stringDate = dateNow.toISOString();
 	const isoDate = new Date(stringDate);
 	const date = isoDate.toJSON().slice(0, 19).replace('T', ' ');
-	console.log(date);
 
 	const OTP = generateOtp(res);
-	console.log(OTP);
 	const hashedOTP = await bcrypt.hash(OTP, 8);
 
 	// Send auth email
@@ -162,7 +160,6 @@ exports.verifyUser = async (req, res) => {
 				});
 
 				// Get user email to send verified notifcation to
-				console.log(res.locals.user.email);
 				// Send email verified email
 				const mailOptions = {
 					from: 'email@email.com',
@@ -193,6 +190,7 @@ exports.adminAuthenticate = async (req, res) => {
 		if (err) {
 			return sendResponse(400, err, res);
 		}
+
 		if (result.length < 1) {
 			return sendResponse(400, 'No users with given id...', res);
 		}
@@ -218,9 +216,21 @@ exports.adminAuthenticate = async (req, res) => {
 						return sendResponse(400, err, res);
 					}
 
-					return res
-						.status(200)
-						.send({ success: true, msg: 'User authenticated by admin' });
+					// Delete token row from authTokens db
+
+					const deleteAuthTokenQuery = `DELETE FROM authTokens WHERE ownerId = "${uid}"`;
+
+					db.query(deleteAuthTokenQuery, (err, result) => {
+						if (err) {
+							return res.status(400).send({
+								success: false,
+								error: 'Unable to delete auth token from db',
+							});
+						}
+						return res
+							.status(200)
+							.send({ success: true, msg: 'User authenticated by admin' });
+					});
 				});
 			});
 		} else {

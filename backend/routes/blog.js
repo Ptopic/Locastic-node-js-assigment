@@ -20,158 +20,57 @@ const { validateUser, validateFunc } = require('../middleware/validator');
 
 const router = require('express').Router();
 
+// Schemas
+
 /**
- * @swagger
- * components:
- *  schemas:
- *      User:
- *          type: object
- *          required:
- *              - uid
- *              - isVerified
- *              - email
- *              - password
- *              - firstName
- *              - lastName
- *              - role
- *          properties:
- *              uid:
- *                  type: string
- *                  description: Auto-generated id for user
- *              isVerified:
- *                  type: integer
- *                  description: Verification status for user (1 is verified, 0 not verified)
- *              email:
- *                  type: string
- *                  description: Email associated to users account
- *              password:
- *                  type: string
- *                  description: Users password
- *              firstName:
- *                  type: string
- *                  description: Firstname of user
- *              lastName:
- *                  type: string
- *                  description: Lastname of user
- *              role:
- *                  type: string
- *                  description: Role of user (USER, BLOGGER, ADMIN)
- *          example:
- *              uid: 3213dwda231
- *              isVerified: 1
- *              email: email@gmail.com
- *              password: $2b$08$g.CFmLC0J1tjxwwVijvHUecxLIaC2RqjVVsoA9ueT1g
- *              firstName: first
- *              lastName: last
- *              role: BLOGGER
- *      Post:
- *          type: object
- *          required:
- *              - id
- *              - ownerId
- *              - title
- *              - content
- *              - timeStamp
- *              - author
- *              - allowed
- *          properties:
- *              id:
- *                  type: integer
- *                  description: Auto-generated id for user
- *              ownerId:
- *                  type: string
- *                  description: ID of user which created that post
- *              title:
- *                  type: string
- *                  description: Title of post
- *              content:
- *                  type: string
- *                  description: Content of post
- *              timeStamp:
- *                  type: date
- *                  description: Date and time when post was created
- *              author:
- *                  type: string
- *                  description: First and last name of user which created a post
- *              allowed:
- *                  type: string
- *                  description: Is post allowed by admin ('allowed', 'denied')
- *          example:
- *              id: 1
- *              ownerId: 3213dwda231
- *              title: Awesome blog post
- *              content: Content of blog post.
- *              timeStamp: date
- *              author: Firstname Lastname
- *              allowed: denied
- *      registerSucess:
- *          type: object
- *          required:
- *              - sucess
- *              - data
- *          properties:
- *              sucess:
- *                  type: string
- *                  description: "true"
- *              data:
- *                  type: string
- *                  description: data
- *          example:
- *              sucess: "true"
- *              data: "data"
+ * A User
+ * @typedef {object} User
+ * @property {string} uid.required - uid of user
+ * @property {number} isVerified.required - is user verified (1 is verified, 0 is not verified)
+ * @property {string} email.required - Email of user
+ * @property {string} password.required - Password of user
+ * @property {string} firstName.required - First name of user
+ * @property {string} lastName.required - Last name of user
+ * @property {string} role.required - Role of user (USER, BLOGGER, ADMIN)
  */
 
 /**
- * @swagger
- * tags:
- *  name: Authentication
- *  description: Methods for registering, verifying and loging in a user
- */
-
-/**
- * @swagger
- * tags:
- *  name: Posts
- *  description: Methods for creating updating and getting blog posts
+ * A Post
+ * @typedef {object} Post
+ * @property {number} id.required - id of post
+ * @property {string} ownerId.required - id of user who created post
+ * @property {string} title.required - title of post
+ * @property {string} content.required - content of post
+ * @property {string} timeStamp.required - time and date when post was created
+ * @property {string} author.required - authors first and last name
+ * @property {string} allowed.required - is post allowed by admin ('denied', 'allowed')
  */
 
 // Register user
 
 /**
- * @swagger
- * /api/blog/register:
- *  post:
- *      summary: Registers user to database
- *      tags: [Authentication]
- *      requestBody:
- *          content:
- *              application/json:
- *                  schema:
- *                      type: object
- *                      properties:
- *                          firstName:
- *                              type: string
- *                              default: firstname
- *                          lastName:
- *                              type: string
- *                              default: lastname
- *                          email:
- *                              type: string
- *                              default: test@gmail.com
- *                          password:
- *                              type: string
- *                              default: ""
- *     responses:
- *     	200:
- *     		description: Success
- *        	content:
- *          	application/json:
- *            		schema:
- *              		$ref: '#/components/schemas/registerSucess'
- *      409:
- *        description: Conflict
- *      400:
- *        description: Bad request
+ * POST /api/blog/register
+ * @tags Authentication
+ * @summary Registers a user account
+ * @param {firstName} firstName.form.required - Users first name - application/x-www-form-urlencoded
+ * @param {lastName} lastName.form.required - Users last name - application/x-www-form-urlencoded
+ * @param {email} email.form.required - Users email - application/x-www-form-urlencoded
+ * @param {password} password.form.required - Users password - application/x-www-form-urlencoded
+ * @return {object} 200 - Success response
+ * @return {object} 400 - Bad request response
+ * @example response - 200 - example success response
+ * {
+ *   "success": true,
+ *   "user": {
+ * 	   "id": "d73d47b8-f25c-4d95-9da2-877063435219",
+ * 	   "email": "dwad@gmail.com"
+ * 	 }
+ * }
+ * @example response - 400 - example error response
+ * {
+ *   "sucess": false,
+ *   "error": "Email is missing"
+ * }
  */
 
 router.post(
@@ -183,74 +82,48 @@ router.post(
 	createAuthToken
 );
 
-/**
- * @swagger
- * /api/blog/verify-user:
- *  post:
- *      summary: Verify user with 4 digit OTP from email
- *      tags: [Authentication]
- *      requestBody:
- *          content:
- *              application/json:
- *                  schema:
- *                      type: object
- *                      properties:
- *                          userId:
- *                              type: string
- *                              default: 312312dwad
- *                          otp:
- *                              type: string
- *                              default: 1234
- *      responses:
- *           200:
- *              description: The list of users
- *              content:
- *                  application/json:
- *                      schema:
- *                          type: object
- *                          properties:
- *                              sucess:
- *                                  type: string
- *                              message:
- *                                  type: string
- */
-
 // Verify user after register
+
+/**
+ * POST /api/blog/verify-user
+ * @tags Authentication
+ * @summary User verification using 4 digit OTP code from email and user id from registration success response
+ * @param {string} userId.form.required - Users id, From regisration response - application/x-www-form-urlencoded
+ * @param {string} otp.form.required - Users otp code, From email - application/x-www-form-urlencoded
+ * @return {object} 200 - Success response
+ * @return {object} 400 - Bad request response
+ * @example response - 200 - example success response
+ * {
+ *   "success": true,
+ *   "message": "User verified successfully!"
+ * }
+ * @example response - 400 - example error response
+ * {
+ *   "sucess": false,
+ *   "error": "This user is already verified"
+ * }
+ */
 
 router.post('/verify-user', verifyUser);
 
 /**
- * @swagger
- * /api/blog/admin-authenticate:
- *  post:
- *      summary: Authenticate user without 4 digit OTP code (Admin only)
- *      tags: [Authentication]
- *      parameters:
- *          - in: header
- *            name: token
- *            type: string
- *            required: true
- *      requestBody:
- *          content:
- *              application/json:
- *                  schema:
- *                      type: object
- *                      properties:
- *                          uid:
- *                              type: string
- *                              default: 404dcad6-e7d4-4a49-854a-aa2a3cc73b33
- *      responses:
- *          '200':
- *              description: The list of users
- *              content:
- *                  application/json:
- *                      schema:
- *                          type: object
- *                          properties:
- *                              sucess:
- *                                  type: string
- *                              message:
- *                                  type: string
+ * POST /api/blog/admin-authenticate
+ * @tags Authentication
+ * @summary Authentication of user without 4 digit OTP code (Admin only)
+ * @param {string} token.header.required - Users token, from login response
+ * @param {string} userId.form.required - Users id, From regisration response - application/x-www-form-urlencoded
+ * @return {object} 200 - Success response
+ * @return {object} 400 - Bad request response
+ * @example response - 200 - example success response
+ * {
+ *   "success": true,
+ *   "message": "User authenticated by admin"
+ * }
+ * @example response - 400 - example error response
+ * {
+ *   "sucess": false,
+ *   "error": "Admin role required for this action"
+ * }
  */
 
 router.post('/admin-authenticate', adminAuthenticate);
@@ -258,226 +131,190 @@ router.post('/admin-authenticate', adminAuthenticate);
 // Login
 
 /**
- * @swagger
- * /api/blog/login:
- *  post:
- *      summary: Loges in user with his email and password - Returns a JWT token used for later authentication
- *      tags: [Authentication]
- *      requestBody:
- *          content:
- *              application/json:
- *                  schema:
- *                      type: object
- *                      properties:
- *                          email:
- *                              type: string
- *                              default: test@gmail.com
- *                          password:
- *                              type: string
- *                              default: password
- *      responses:
- *          '200':
- *              description: The list of users
- *              content:
- *                  application/json:
- *                      schema:
- *                          type: object
- *                          properties:
- *                              sucess:
- *                                  type: string
- *                              data:
- *                                  type: object
- *
+ * POST /api/blog/login
+ * @tags Authentication
+ * @summary Login user
+ * @param {string} email.form.required - Users email - application/x-www-form-urlencoded
+ * @param {string} password.form.required - Users password - application/x-www-form-urlencoded
+ * @return {object} 200 - Success response
+ * @return {object} 400 - Bad request response
+ * @example response - 200 - example success response
+ * {
+ *   "success": true,
+ *   "user": {
+ * 	   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiI0MDRkY2FkNi1lN2Q0LTRhNDktODU0YS1hYTJhM2NjNzNiMzMiLCJlbWFpbCI6InBpbmdvMTUxMDIwMDJAZ21haWwuY29tIiwiZmlyc3ROYW1lIjoiZmlyc3RuYW1lZSIsImxhc3ROYW1lIjoibGFzdG5hbWVlIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNjg2NDEyNzU1fQ"
+ * 	 }
+ * }
+ * @example response - 400 - example error response
+ * {
+ *   "sucess": false,
+ *   "error": "User is not verified"
+ * }
  */
 
 router.post('/login', login);
 
 // Posts
 
-/**
- * @swagger
- * /api/blog/users:
- *  get:
- *      summary: Returns all users from database
- *      tags: [Posts]
- *      parameters:
- *          - in: header
- *            name: token
- *            type: string
- *            required: true
- *      responses:
- *          '200':
- *              description: The list of users
- *              content:
- *                  application/json:
- *                      schema:
- *                          type: object
- *                          properties:
- *                              sucess:
- *                                  type: string
- *                              data:
- *                                  type: object
- */
 // Todo - Validate title and content on post create
+
+/**
+ * GET /api/blog/users
+ * @tags Posts
+ * @summary Returns all users from database
+ * @param {string} token.header.required - Users token, from login response
+ * @return {array<User>} 200 - Success response
+ * @return {object} 400 - Bad request response
+ * @example response - 200 - example success response
+ * {
+ *   "success": true,
+ *   "data": [
+ *   {
+ *     "firstName": "firstname",
+ *     "lastName": "test",
+ *     "email": "testuser@gmail.com",
+ * 	   "role": "USER"
+ *   },
+ *   {
+ *     "firstName": "test",
+ *     "lastName": "test",
+ *     "email": "test@gmail.com",
+ * 	   "role": "ADMIN"
+ *   }
+ * ]
+ * }
+ * @example response - 400 - example error response
+ * {
+ *   "sucess": false,
+ *   "error": "Admin role required for this action"
+ * }
+ */
+
 router.get('/users', getAllUsers);
 
 /**
- * @swagger
- * /api/blog/posts:
- *  post:
- *      summary: Creates a post
- *      tags: [Posts]
- *      parameters:
- *          - in: header
- *            name: token
- *            type: string
- *            required: true
- *      requestBody:
- *          content:
- *              application/json:
- *                  schema:
- *                      type: object
- *                      properties:
- *                          content:
- *                              type: string
- *                              default: Title of post
- *                          title:
- *                              type: string
- *                              default: Content of post
- *      responses:
- *          '200':
- *              description: The list of users
- *              content:
- *                  application/json:
- *                          type: object
- *                          properties:
- *                              sucess:
- *                                  type: string
- *                              data:
- *                                  type: object
+ * POST /api/blog/posts
+ * @tags Posts
+ * @summary Create a post
+ * @param {string} token.header.required - Users token, from login response
+ * @param {string} title.form.required - Title of post - application/x-www-form-urlencoded
+ * @param {string} content.form.required - Content of post - application/x-www-form-urlencoded
+ * @return {object} 200 - Success response
+ * @return {object} 400 - Bad request response
+ * @example response - 200 - example success response
+ * {
+ *   "success": true,
+ *   "message": "Success"
+ * }
+ * @example response - 400 - example error response
+ * {
+ *   "sucess": false,
+ *   "error": "Title or content of post is missing"
+ * }
  */
+
 router.post('/posts', createPost);
 
 /**
- * @swagger
- * /api/blog/post-request:
- *  get:
- *      summary: Access post requests (Admin only) - If role changes needs relogin
- *      tags: [Posts]
- *      parameters:
- *          - in: header
- *            name: token
- *            type: string
- *            required: true
- *      responses:
- *          '200':
- *              description: The list of users
- *              content:
- *                  application/json:
- *                      schema:
- *                          type: object
- *                          properties:
- *                              sucess:
- *                                  type: string
- *                              data:
- *                                  type: object
+ * GET /api/blog/post-request
+ * @tags Posts
+ * @summary Access post requests (Admin only) - If role changes needs relogin
+ * @param {string} token.header.required - Users token, from login response
+ * @return {object} 200 - Success response
+ * @return {object} 400 - Bad request response
+ * @example response - 200 - example success response
+ * {
+ *   "success": true,
+ *	 "data": [
+ *   {
+ *     "id": 1,
+ *     "ownerId": "404dcad6-e7d4-4a49-854a-aa2a3cc73b33",
+ *     "title": "title",
+ *     "content": "content",
+ *     "timeStamp": "2023-06-10T15:08:33.000Z",
+ *     "author": "Firstnamee Lastnamee",
+ *     "allowed": "denied"
+ *   }
+ * ]
+ * }
+ * @example response - 400 - example error response
+ * {
+ *   "sucess": false,
+ *   "error": "Title or content of post is missing"
+ * }
  */
+
 router.get('/post-request', accessPostRequests);
 
 /**
- * @swagger
- * /api/blog/post-request:
- *  post:
- *      summary: Update post status to allowed or denied by admin (Admin only)
- *      tags: [Posts]
- *      parameters:
- *          - in: header
- *            name: token
- *            type: string
- *            required: true
- *      requestBody:
- *          content:
- *              application/json:
- *                  schema:
- *                      type: object
- *                      properties:
- *                          status:
- *                              type: string
- *                              default: "allowed"
- *                          id:
- *                              type: integer
- *                              default: 1
- *      responses:
- *          '200':
- *              description: The list of users
- *              content:
- *                  application/json:
- *                          type: object
- *                          properties:
- *                              sucess:
- *                                  type: string
- *                              data:
- *                                  msg: string
+ * POST /api/blog/post-request
+ * @tags Posts
+ * @summary Update post status to allowed or denied by admin (Admin only)
+ * @param {string} token.header.required - Token, From login response
+ * @param {string} id.form.required - Id of post - application/x-www-form-urlencoded
+ * @param {string} status.form.required - Status of post to be changed to, only allowed are 'allowed' and 'denied' others wont work - application/x-www-form-urlencoded
+ * @return {object} 200 - Success response
+ * @return {object} 400 - Bad request response
+ * @example response - 200 - example success response
+ * {
+ *   "success": true,
+ *   "message": "Post status changed by admin"
+ * }
+ * @example response - 400 - example error response
+ * {
+ *   "sucess": false,
+ *   "error": "Title or content of post is missing"
+ * }
  */
 
 router.post('/post-request', changePostStatus);
 
 /**
- * @swagger
- * /api/blog/posts:
- *  get:
- *      summary: Get posts
- *      tags: [Posts]
- *      parameters:
- *          - in: header
- *            name: token
- *            type: string
- *            required: true
- *      responses:
- *          '200':
- *              description: The list of users
- *              content:
- *                  application/json:
- *                          type: object
- *                          properties:
- *                              sucess:
- *                                  type: string
- *                              data:
- *                                  msg: object
+ * GET /api/blog/posts
+ * @tags Posts
+ * @summary Get posts
+ * @param {string} token.header - Token, From login response, From regisration response
+ * @param {string} id.form.required - Id of post - application/x-www-form-urlencoded
+ * @example response - 200 - example success response
+ * {
+ *   "success": true,
+ *	 "data": [
+ *   {
+ *     "id": 1,
+ *     "ownerId": "404dcad6-e7d4-4a49-854a-aa2a3cc73b33",
+ *     "title": "title",
+ *     "content": "content",
+ *     "timeStamp": "2023-06-10T15:08:33.000Z",
+ *     "author": "Firstnamee Lastnamee",
+ *     "allowed": "denied"
+ *   }
+ * ]
+ * }
+ * @example response - 400 - example error response
+ * {
+ *   "sucess": false,
+ *   "error": "You dont have any posts to delete"
+ * }
  */
+
 router.get('/posts', getPosts);
 
 /**
- * @swagger
- * /api/blog/posts:
- *  delete:
- *      summary: Delete post
- *      tags: [Posts]
- *      parameters:
- *          - in: header
- *            name: token
- *            type: string
- *            required: true
- *      requestBody:
- *          content:
- *              application/json:
- *                  schema:
- *                      type: object
- *                      properties:
- *                          id:
- *                              type: integer
- *                              default: 1
- *      responses:
- *          '200':
- *              description: The list of users
- *              content:
- *                  application/json:
- *                          type: object
- *                          properties:
- *                              sucess:
- *                                  type: string
- *                              data:
- *                                  msg: string
+ * DELETE /api/blog/posts
+ * @tags Posts
+ * @summary Delete post
+ * @param {string} token.header - Users token, from login response
+ * @param {string} id.form.required - Id of post - application/x-www-form-urlencoded
+ * @example response - 200 - example success response
+ * {
+ *   "success": true,
+ *   "message": "Post with id 1 deleted"
+ * }
+ * @example response - 400 - example error response
+ * {
+ *   "sucess": false,
+ *   "error": "You dont have any posts to delete"
+ * }
  */
 
 router.delete('/posts', deletePosts);
