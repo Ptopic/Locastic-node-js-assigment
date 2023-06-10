@@ -25,7 +25,7 @@ cd backend
 npm i
 ```
 
-<br><br>
+<br>
 
 Start dev server
 
@@ -33,7 +33,7 @@ Start dev server
 npm run start
 ```
 
-<br><br>
+<br>
 
 Route for calling api
 
