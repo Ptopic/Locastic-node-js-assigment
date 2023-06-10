@@ -15,7 +15,7 @@ or test with swagger ui
 Clone repo
 
 ```
-https://github.com/Ptopic/Locastic-node-js-assigment.git
+git clone https://github.com/Ptopic/Locastic-node-js-assigment.git
 ```
 
 Cd into backend folder and install dependacies
